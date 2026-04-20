@@ -50,7 +50,9 @@
     .dark .hero-bg {
       background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(79,110,247,0.1) 0%, transparent 60%);
     }
-    #results-section { scroll-margin-top: 80px; }
+    #results-section, #explorer-section { scroll-margin-top: 80px; }
+    .chip.active { background: #4f6ef7 !important; color: white !important; border-color: #4f6ef7 !important; }
+    .dark .chip.active { background: #3b5bf6 !important; }
     .toast {
       position: fixed; bottom: 24px; right: 24px;
       z-index: 9999;
@@ -131,6 +133,63 @@
       </div>
     </div>
   </main>
+
+  <!-- ──────────────────────────── COMPANY EXPLORER ──────────────────────────── -->
+  <section id="explorer-section" class="max-w-6xl mx-auto px-4 py-8">
+
+    <!-- Section header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+      <div>
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          🏢 <span>Company Explorer</span>
+          <span class="text-xs font-medium bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 px-2 py-0.5 rounded-full">NEW</span>
+        </h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Browse top companies by your discipline — click one to see available jobs across all boards</p>
+      </div>
+    </div>
+
+    <!-- Discipline search row -->
+    <div class="flex gap-2 mb-4">
+      <input id="discipline-input" type="text" placeholder="Type your discipline, e.g. Data Analytics, Finance, Energy, Marketing…"
+        class="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder-gray-400 transition-all"
+        onkeydown="if(event.key==='Enter') exploreCompanies()" oninput="liveExplore(this.value)" />
+      <button onclick="exploreCompanies()" class="btn-press bg-brand-500 hover:bg-brand-600 text-white font-semibold px-5 py-3 rounded-xl transition-all text-sm flex items-center gap-2 whitespace-nowrap">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        Explore
+      </button>
+    </div>
+
+    <!-- Quick filter chips -->
+    <div class="flex flex-wrap gap-2 mb-5" id="discipline-chips">
+      <button onclick="quickExplore(this,'data')"    class="chip btn-press inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:border-brand-400 hover:text-brand-600 transition-all">📊 Data & Analytics</button>
+      <button onclick="quickExplore(this,'engineering')" class="chip btn-press inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:border-brand-400 hover:text-brand-600 transition-all">💻 Engineering</button>
+      <button onclick="quickExplore(this,'finance')" class="chip btn-press inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:border-brand-400 hover:text-brand-600 transition-all">💰 Finance</button>
+      <button onclick="quickExplore(this,'energy')"  class="chip btn-press inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:border-brand-400 hover:text-brand-600 transition-all">⚡ Energy</button>
+      <button onclick="quickExplore(this,'healthcare')" class="chip btn-press inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:border-brand-400 hover:text-brand-600 transition-all">🏥 Healthcare</button>
+      <button onclick="quickExplore(this,'consulting')" class="chip btn-press inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:border-brand-400 hover:text-brand-600 transition-all">🎯 Consulting</button>
+      <button onclick="quickExplore(this,'marketing')" class="chip btn-press inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:border-brand-400 hover:text-brand-600 transition-all">📣 Marketing</button>
+      <button onclick="quickExplore(this,'ai')"      class="chip btn-press inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:border-brand-400 hover:text-brand-600 transition-all">🤖 AI / ML</button>
+      <button onclick="quickExplore(this,'product')" class="chip btn-press inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:border-brand-400 hover:text-brand-600 transition-all">📦 Product</button>
+    </div>
+
+    <!-- Company count/status -->
+    <div id="explorer-status" class="text-sm text-gray-400 dark:text-gray-500 mb-4 hidden">
+      <span id="explorer-status-text"></span>
+    </div>
+
+    <!-- Company grid (empty state) -->
+    <div id="company-grid-empty" class="bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 p-12 text-center">
+      <div class="text-4xl mb-3">🔭</div>
+      <p class="font-semibold text-gray-600 dark:text-gray-400">Type your discipline above or pick a category</p>
+      <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">We'll show you the top companies hiring in that space</p>
+    </div>
+
+    <!-- Company cards grid -->
+    <div id="company-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 hidden"></div>
+
+  </section>
 
   <!-- ──────────────────────────── RECENT SEARCHES ──────────────────────────── -->
   <div id="recent-panel" class="hidden max-w-3xl mx-auto px-4 mb-6 animate-slide-up">
@@ -483,6 +542,328 @@
         setTimeout(() => window.open(board.url(role, loc, company), '_blank', 'noopener'), i * 200);
       });
       showToast('Opening all ' + JOB_BOARDS.length + ' platforms…');
+    }
+
+    // ─── Company Explorer Database ────────────────────────────────────
+    const COMPANY_DB = [
+      {
+        id: 'data',
+        label: 'Data & Analytics',
+        emoji: '📊',
+        keywords: ['data','analytics','analyst','business intelligence','bi','sql','reporting','tableau','power bi','snowflake','looker','databricks'],
+        companies: [
+          { name:'Google',       industry:'Technology',      size:'Enterprise', remote:'Remote-Friendly', tags:['Top Payer','Data-Driven','BigQuery/Looker'],  note:'World-class data infra; BigQuery, Looker, and Vertex AI ecosystem' },
+          { name:'Meta',         industry:'Social Media',    size:'Enterprise', remote:'Remote-Friendly', tags:['Top Payer','A/B Testing at Scale'],           note:'Presto, Spark, and Scuba; massive experimentation and real-time analytics' },
+          { name:'Amazon',       industry:'E-commerce/Cloud',size:'Enterprise', remote:'Remote-Friendly', tags:['Top Payer','AWS Ecosystem'],                  note:'Redshift, Athena, QuickSight; data engineering for the AWS ecosystem' },
+          { name:'Microsoft',    industry:'Technology',      size:'Enterprise', remote:'Remote-Friendly', tags:['Power BI/Fabric','Azure Synapse'],             note:'Fabric, Power BI, and Synapse; leading enterprise BI and analytics platform' },
+          { name:'Snowflake',    industry:'Data Cloud',      size:'Large',      remote:'Remote-Friendly', tags:['Top Payer','Fast Growth','Data Governance'],   note:'Core data cloud platform; data sharing, governance, and engineering roles' },
+          { name:'Databricks',   industry:'Data & AI',       size:'Large',      remote:'Remote-Friendly', tags:['Top Payer','Fast Growth','Spark/Delta Lake'],  note:'Unified analytics; Delta Lake, MLflow, and Apache Spark ecosystem' },
+          { name:'Palantir',     industry:'Defense/Analytics',size:'Large',     remote:'Hybrid',          tags:['High Impact','Challenging Work'],              note:'Foundry and Gotham platforms; complex data integration and analytics' },
+          { name:'Salesforce',   industry:'CRM/Cloud',       size:'Enterprise', remote:'Remote-Friendly', tags:['Top Payer','Tableau + Einstein'],              note:'Tableau, Einstein Analytics; enterprise CRM and analytics at scale' },
+          { name:'Capital One',  industry:'Banking/Fintech', size:'Enterprise', remote:'Remote-Friendly', tags:['Tech-Forward','AWS Native'],                  note:'Tech-first bank; heavy SQL, AWS, and ML investment in data teams' },
+          { name:'Domo',         industry:'Business Intelligence',size:'Mid-size',remote:'Remote-Friendly',tags:['BI Focus','Cloud-Native'],                  note:'Cloud BI platform; business dashboards and data storytelling' },
+        ]
+      },
+      {
+        id: 'engineering',
+        label: 'Software Engineering',
+        emoji: '💻',
+        keywords: ['software','engineer','developer','programming','full stack','backend','frontend','devops','cloud','infrastructure','java','python','react'],
+        companies: [
+          { name:'Google',       industry:'Technology',   size:'Enterprise', remote:'Remote-Friendly', tags:['Top Payer','Cutting-Edge','GCP'],     note:'World-class engineering culture; GCP, TensorFlow, and Kubernetes origins' },
+          { name:'Amazon',       industry:'Cloud/E-comm', size:'Enterprise', remote:'Remote-Friendly', tags:['Top Payer','Distributed Systems'],    note:'AWS, Prime, Alexa; massive distributed systems engineering challenges' },
+          { name:'Microsoft',    industry:'Technology',   size:'Enterprise', remote:'Remote-Friendly', tags:['Work-Life Balance','Azure/.NET'],     note:'Azure, VS Code, .NET; excellent growth paths and mentorship culture' },
+          { name:'Meta',         industry:'Social Media', size:'Enterprise', remote:'Remote-Friendly', tags:['Top Payer','Scale Challenges'],       note:'React, GraphQL, PyTorch; engineering at billion-user scale' },
+          { name:'Netflix',      industry:'Streaming',    size:'Large',      remote:'Remote-Friendly', tags:['Top Payer','High Autonomy'],          note:'Freedom & Responsibility culture; chaos engineering and streaming infra' },
+          { name:'Stripe',       industry:'Fintech',      size:'Large',      remote:'Remote-Friendly', tags:['Top Payer','Fast Growth','Quality'],  note:'Payments API infrastructure; high bar distributed systems engineering' },
+          { name:'Cloudflare',   industry:'Network/Security',size:'Large',   remote:'Remote-Friendly', tags:['Interesting Problems','Edge Network'],note:'Edge networking; DDoS protection and zero-trust engineering' },
+          { name:'Shopify',      industry:'E-commerce',   size:'Large',      remote:'Fully Remote',    tags:['Remote-First','Ruby/Go'],             note:'Remote-first commerce platform; Ruby on Rails engineering excellence' },
+          { name:'GitLab',       industry:'DevOps',       size:'Mid-size',   remote:'Fully Remote',    tags:['All-Remote Pioneer','Open Source'],   note:'All-remote DevOps platform; single-application CI/CD approach' },
+          { name:'Vercel',       industry:'Developer Tools',size:'Mid-size', remote:'Fully Remote',    tags:['Developer Experience','Next.js'],     note:'Next.js, edge deployment; developer-experience-first engineering' },
+        ]
+      },
+      {
+        id: 'finance',
+        label: 'Finance',
+        emoji: '💰',
+        keywords: ['finance','financial','accounting','fintech','banking','investment','analyst','cfa','cpa','risk','treasury','audit','quant'],
+        companies: [
+          { name:'JPMorgan Chase',industry:'Investment Banking',size:'Enterprise',remote:'Hybrid',     tags:['Top Payer','Prestige','Tech Transform'],  note:'World\'s largest investment bank; massive tech and data transformation' },
+          { name:'Goldman Sachs', industry:'Investment Banking',size:'Enterprise',remote:'Hybrid',     tags:['Top Payer','Prestige','Quant Focus'],      note:'Marcus, GS Bank; cutting-edge quantitative and data analytics teams' },
+          { name:'BlackRock',     industry:'Asset Management', size:'Enterprise', remote:'Hybrid',     tags:['Top Payer','Aladdin Platform'],            note:'Aladdin risk platform; largest asset manager with deep data analytics' },
+          { name:'Capital One',   industry:'Banking/Fintech',  size:'Enterprise', remote:'Remote-Friendly',tags:['Tech-First','AWS Native'],           note:'Tech-first bank; analytics, ML, and data engineering at scale' },
+          { name:'Visa',          industry:'Payments',         size:'Enterprise', remote:'Remote-Friendly',tags:['Top Payer','Transaction Analytics'],  note:'Global payments; fraud analytics and transaction data at massive scale' },
+          { name:'Stripe',        industry:'Fintech',          size:'Large',      remote:'Remote-Friendly',tags:['Top Payer','Fast Growth'],            note:'Payments API; growing financial infrastructure and analytics platform' },
+          { name:'Bloomberg',     industry:'Financial Data',   size:'Large',      remote:'Hybrid',     tags:['Top Payer','Data-Driven'],                note:'Terminal and data feeds; leading financial data and analytics platform' },
+          { name:'Fidelity',      industry:'Asset Management', size:'Enterprise', remote:'Hybrid',     tags:['Stability','Good Benefits'],              note:'Retail and institutional investing; strong data science and analytics teams' },
+          { name:'Plaid',         industry:'Fintech',          size:'Large',      remote:'Remote-Friendly',tags:['Fast Growth','Open Finance'],         note:'Financial data connectivity; powering thousands of fintech applications' },
+          { name:'Robinhood',     industry:'Fintech',          size:'Mid-size',   remote:'Remote-Friendly',tags:['Fast Growth','Real-time Data'],       note:'Retail trading platform; real-time financial data and risk management' },
+        ]
+      },
+      {
+        id: 'energy',
+        label: 'Energy & Utilities',
+        emoji: '⚡',
+        keywords: ['energy','utilities','oil','gas','renewable','solar','power','grid','electrical','petroleum','upstream','downstream','nuclear','wind'],
+        companies: [
+          { name:'ExxonMobil',    industry:'Oil & Gas',   size:'Enterprise', remote:'Hybrid',          tags:['Stability','Top Pay','Digital Transform'],  note:'Downstream/upstream; analytics and data-driven digital transformation push' },
+          { name:'Chevron',       industry:'Oil & Gas',   size:'Enterprise', remote:'Hybrid',          tags:['Stability','Top Pay','Global Reach'],        note:'Energy portfolio; operational analytics and data science investments' },
+          { name:'Shell',         industry:'Oil & Gas',   size:'Enterprise', remote:'Remote-Friendly', tags:['Global Reach','Energy Transition'],           note:'Energy transition leader; digital solutions and data science initiatives' },
+          { name:'NextEra Energy',industry:'Renewables',  size:'Enterprise', remote:'Hybrid',          tags:['Renewables Leader','Fast Growth'],            note:'World\'s largest renewable producer; data-driven wind and solar operations' },
+          { name:'Southern Company',industry:'Utilities', size:'Enterprise', remote:'Hybrid',          tags:['Stability','Southeast US'],                   note:'Electric and gas utilities; smart grid analytics and energy data platforms' },
+          { name:'Duke Energy',   industry:'Utilities',   size:'Enterprise', remote:'Hybrid',          tags:['Stability','Good Benefits','Grid Modernization'],note:'One of the largest US utilities; data-driven grid modernization programs' },
+          { name:'Dominion Energy',industry:'Utilities',  size:'Enterprise', remote:'Hybrid',          tags:['Stability','Southeast US'],                   note:'Electric and gas utility; customer analytics and grid operations data' },
+          { name:'Spire Energy',  industry:'Gas Utility', size:'Large',      remote:'Hybrid',          tags:['Stability','Birmingham AL'],                  note:'Natural gas distribution; analytics-driven safety, operations, and forecasting' },
+          { name:'Tesla Energy',  industry:'EV/Renewables',size:'Enterprise',remote:'Hybrid',          tags:['Innovative','Fast-Paced','Storage Analytics'],note:'Powerwall, Megapack; energy storage monitoring and grid analytics' },
+          { name:'Enphase Energy',industry:'Solar/Renew', size:'Large',      remote:'Remote-Friendly', tags:['Fast Growth','IoT Analytics'],               note:'Solar microinverters; IoT data monitoring and energy performance analytics' },
+        ]
+      },
+      {
+        id: 'healthcare',
+        label: 'Healthcare',
+        emoji: '🏥',
+        keywords: ['healthcare','health','medical','clinical','hospital','pharma','biotech','patient','nursing','physician','insurance','med','ehr'],
+        companies: [
+          { name:'UnitedHealth/Optum',industry:'Healthcare',size:'Enterprise',remote:'Remote-Friendly',tags:['Top Payer','Data-Driven','Scale'],        note:'Optum Analytics subsidiary; largest health insurer with deep data programs' },
+          { name:'Epic Systems',  industry:'Health IT',    size:'Large',      remote:'Hybrid',          tags:['Stability','EHR Platform','Strong Benefits'],note:'Healthcare EHR platform; analytics and reporting for clinical data at scale' },
+          { name:'Humana',        industry:'Health Insurance',size:'Enterprise',remote:'Remote-Friendly',tags:['Remote-Friendly','Medicare Focus'],      note:'Medicare advantage leader; claims data analytics and population health' },
+          { name:'CVS Health',    industry:'Healthcare',   size:'Enterprise', remote:'Remote-Friendly', tags:['Stability','Pharmacy + Analytics'],         note:'Pharmacy and PBM services; consumer health analytics and data platforms' },
+          { name:'Johnson & Johnson',industry:'Pharma/MedTech',size:'Enterprise',remote:'Hybrid',      tags:['Prestige','R&D Focus','Global'],            note:'Pharma and medical devices; clinical data science and regulatory analytics' },
+          { name:'Abbott',        industry:'MedTech',      size:'Enterprise', remote:'Hybrid',          tags:['Devices + Diagnostics','Global'],           note:'Medical devices and diagnostics; data analytics for health monitoring products' },
+          { name:'Flatiron Health',industry:'Oncology Analytics',size:'Mid-size',remote:'Remote-Friendly',tags:['Mission-Driven','Cancer Data'],         note:'Cancer data and analytics; EHR data for clinical research and real-world evidence' },
+          { name:'Tempus',        industry:'Genomics/AI',  size:'Mid-size',   remote:'Remote-Friendly', tags:['Fast Growth','Precision Medicine'],         note:'AI precision medicine; genomic and clinical data for oncology analytics' },
+          { name:'Verily',        industry:'Digital Health',size:'Large',     remote:'Remote-Friendly', tags:['Innovative','Google-Backed'],               note:'Google\'s life sciences arm; wearable data and health analytics research' },
+          { name:'Cerner/Oracle Health',industry:'Health IT',size:'Enterprise',remote:'Remote-Friendly',tags:['EHR Integration','Oracle Ecosystem'],     note:'EHR systems; now part of Oracle with large-scale data integration push' },
+        ]
+      },
+      {
+        id: 'consulting',
+        label: 'Consulting & Strategy',
+        emoji: '🎯',
+        keywords: ['consulting','strategy','management consultant','advisory','transformation','analyst','mckinsey','deloitte','accenture','big 4'],
+        companies: [
+          { name:'McKinsey & Company',industry:'Strategy Consulting',size:'Enterprise',remote:'Hybrid',tags:['Prestige','Global','Analytics Practice'],   note:'Top global strategy consulting; analytics and digital transformation practices' },
+          { name:'Boston Consulting Group',industry:'Strategy Consulting',size:'Enterprise',remote:'Hybrid',tags:['Prestige','BCG Gamma','AI Strategy'],  note:'BCG Gamma data science unit; digital ventures and AI strategy consulting' },
+          { name:'Bain & Company',industry:'Strategy Consulting',size:'Enterprise',remote:'Hybrid',     tags:['Prestige','Private Equity','Advanced Analytics'],note:'Management consulting; advanced analytics and data science practice' },
+          { name:'Deloitte',      industry:'Professional Services',size:'Enterprise',remote:'Remote-Friendly',tags:['Large Practice','Government + Commercial'], note:'Analytics & Insights practice; government and commercial data projects at scale' },
+          { name:'Accenture',     industry:'Professional Services',size:'Enterprise',remote:'Remote-Friendly',tags:['Applied Intelligence','Global Scale'],  note:'Applied Intelligence; data engineering and AI consulting worldwide' },
+          { name:'PwC',           industry:'Professional Services',size:'Enterprise',remote:'Remote-Friendly',tags:['Finance + Risk Analytics','Global'],    note:'Data and analytics transformation; finance and risk analytics advisory' },
+          { name:'KPMG',          industry:'Professional Services',size:'Enterprise',remote:'Remote-Friendly',tags:['Lighthouse Innovation','Global'],        note:'Lighthouse centers; innovation and data analytics consulting' },
+          { name:'EY',            industry:'Professional Services',size:'Enterprise',remote:'Remote-Friendly',tags:['EY Parthenon','Strategy + Analytics'],   note:'EY Parthenon; data-driven strategy advisory and analytics transformation' },
+          { name:'Oliver Wyman',  industry:'Strategy Consulting', size:'Large',      remote:'Hybrid',          tags:['Finance + Risk','Boutique'],            note:'Financial services and risk consulting; advanced quantitative analytics' },
+          { name:'ZS Associates', industry:'Sales/Marketing Consulting',size:'Large',remote:'Remote-Friendly',tags:['Life Sciences','Pharma Analytics'],     note:'Pharma and healthcare analytics consulting; market intelligence and forecasting' },
+        ]
+      },
+      {
+        id: 'marketing',
+        label: 'Marketing & Growth',
+        emoji: '📣',
+        keywords: ['marketing','growth','digital marketing','brand','seo','sem','content','social media','advertising','campaign','crm','demand gen'],
+        companies: [
+          { name:'Google',        industry:'Technology',   size:'Enterprise', remote:'Remote-Friendly', tags:['Top Payer','Ads Platform','Data-Driven'],    note:'Google Ads and YouTube; largest digital advertising platform in the world' },
+          { name:'Meta',          industry:'Social Media', size:'Enterprise', remote:'Remote-Friendly', tags:['Top Payer','Social Ads','Scale'],             note:'Facebook/Instagram ads; social media marketing and targeting at scale' },
+          { name:'HubSpot',       industry:'Marketing/CRM',size:'Large',      remote:'Remote-Friendly', tags:['Inbound Marketing','Marketer-Loved'],         note:'CRM and marketing automation; inbound marketing pioneer and platform' },
+          { name:'Salesforce',    industry:'CRM/Cloud',    size:'Enterprise', remote:'Remote-Friendly', tags:['Top Payer','Pardot + Marketing Cloud'],       note:'Marketing Cloud, Pardot; world-class enterprise marketing automation' },
+          { name:'Adobe',         industry:'Creative/Marketing',size:'Enterprise',remote:'Remote-Friendly',tags:['Experience Cloud','Top Payer'],           note:'Experience Cloud; digital marketing analytics and content management at scale' },
+          { name:'Braze',         industry:'Customer Engagement',size:'Mid-size',remote:'Remote-Friendly',tags:['Fast Growth','Cross-Channel'],              note:'Customer engagement platform; cross-channel marketing analytics and automation' },
+          { name:'Klaviyo',       industry:'Email/SMS Marketing',size:'Large', remote:'Remote-Friendly', tags:['Fast Growth','E-commerce Focus'],            note:'E-commerce marketing automation; data-driven customer engagement platform' },
+          { name:'Amplitude',     industry:'Product Analytics',size:'Mid-size',remote:'Remote-Friendly', tags:['Product Analytics','Growth Focus'],          note:'Product analytics platform; user behavior and growth analytics for teams' },
+          { name:'Sprinklr',      industry:'Social Marketing',size:'Mid-size', remote:'Remote-Friendly', tags:['Unified CXM','Enterprise Social'],           note:'Unified customer experience platform; social media analytics and listening' },
+          { name:'Twilio/Segment',industry:'Customer Data',size:'Large',       remote:'Remote-Friendly', tags:['CDP Leader','Data-Driven Marketing'],        note:'Customer data platform; powering personalization and marketing analytics' },
+        ]
+      },
+      {
+        id: 'ai',
+        label: 'AI & Machine Learning',
+        emoji: '🤖',
+        keywords: ['ai','machine learning','ml','deep learning','nlp','artificial intelligence','llm','data science','model','neural network','generative'],
+        companies: [
+          { name:'OpenAI',        industry:'AI Research/Products',size:'Large',remote:'Hybrid',          tags:['Frontier AI','Top Payer','Mission-Driven'],  note:'ChatGPT, GPT-4; frontier AI research and product development' },
+          { name:'Anthropic',     industry:'AI Safety',    size:'Mid-size',   remote:'Remote-Friendly', tags:['AI Safety','Top Payer','Mission-Driven'],     note:'Claude AI; AI safety research and responsible AI deployment' },
+          { name:'Google DeepMind',industry:'AI Research', size:'Large',      remote:'Hybrid',          tags:['World-Class Research','Top Payer'],           note:'AlphaFold, Gemini; frontier AI research with Nobel-laureate talent' },
+          { name:'Hugging Face',  industry:'AI Platform',  size:'Mid-size',   remote:'Fully Remote',    tags:['Open Source','Community-Driven'],             note:'Model hub and libraries; open-source ML democratization platform' },
+          { name:'Scale AI',      industry:'AI Data/Infra',size:'Large',      remote:'Remote-Friendly', tags:['Fast Growth','Model Evaluation'],             note:'Data labeling and model evaluation; powering major AI labs worldwide' },
+          { name:'Cohere',        industry:'NLP/Enterprise AI',size:'Mid-size',remote:'Remote-Friendly', tags:['Enterprise LLMs','Fast Growth'],             note:'Enterprise LLM APIs; natural language AI for business applications' },
+          { name:'Databricks',    industry:'Data & AI',    size:'Large',      remote:'Remote-Friendly', tags:['Top Payer','MLflow + Delta Lake'],            note:'Unified analytics and AI; MLflow, Delta Lake, and Spark ecosystem' },
+          { name:'Weights & Biases',industry:'ML Platform',size:'Mid-size',   remote:'Remote-Friendly', tags:['Developer-Loved','Experiment Tracking'],      note:'ML experiment management; model monitoring and collaboration platform' },
+          { name:'NVIDIA',        industry:'Semiconductors/AI',size:'Enterprise',remote:'Hybrid',       tags:['Top Payer','GPU/AI Infrastructure'],          note:'GPU chips and CUDA; powering the entire deep learning ecosystem' },
+          { name:'Palantir',      industry:'Defense/Analytics',size:'Large',  remote:'Hybrid',          tags:['AI Platform','High Impact'],                  note:'AIP AI platform; deploying AI in critical government and enterprise operations' },
+        ]
+      },
+      {
+        id: 'product',
+        label: 'Product Management',
+        emoji: '📦',
+        keywords: ['product','product manager','pm','product owner','roadmap','user research','product strategy','agile','scrum'],
+        companies: [
+          { name:'Airbnb',        industry:'Travel/Tech',  size:'Large',      remote:'Remote-Flexible', tags:['Top Payer','Data-Driven PM','Design-Forward'],note:'Marketplace product; data-driven product development and experimentation' },
+          { name:'Uber',          industry:'Transportation',size:'Enterprise', remote:'Remote-Friendly', tags:['Top Payer','Two-Sided Marketplace'],          note:'Ride sharing and delivery; complex two-sided marketplace product challenges' },
+          { name:'Spotify',       industry:'Music/Audio',  size:'Large',       remote:'Remote-Friendly', tags:['Top Payer','Personalization','Creative'],     note:'Audio streaming; data-driven personalization and content discovery product' },
+          { name:'Figma',         industry:'Design Tools', size:'Large',       remote:'Remote-Friendly', tags:['Fast Growth','PLG Pioneer'],                 note:'Design collaboration; product-led growth pioneer acquired by Adobe' },
+          { name:'Notion',        industry:'Productivity', size:'Mid-size',    remote:'Remote-Friendly', tags:['Fast Growth','Strong PM Culture'],            note:'All-in-one workspace; strong product culture and product-led growth motion' },
+          { name:'Atlassian',     industry:'Developer Tools',size:'Large',     remote:'Fully Remote',    tags:['Remote-First','Jira/Confluence'],             note:'Jira, Confluence, Trello; enterprise collaboration and PM tooling' },
+          { name:'Duolingo',      industry:'EdTech',       size:'Large',       remote:'Remote-Friendly', tags:['Mission-Driven','A/B Testing Culture'],       note:'Language learning app; heavy A/B testing and engagement optimization culture' },
+          { name:'Stripe',        industry:'Fintech',      size:'Large',       remote:'Remote-Friendly', tags:['Top Payer','API-First','Developer Focus'],    note:'Payments infrastructure; API-first product culture with very high bar' },
+          { name:'HubSpot',       industry:'Marketing/CRM',size:'Large',       remote:'Remote-Friendly', tags:['Inbound PM Culture','Good Work-Life'],        note:'CRM platform; strong PM culture focused on customer and inbound growth' },
+          { name:'Canva',         industry:'Design/Productivity',size:'Large', remote:'Remote-Friendly', tags:['Fast Growth','Design-Led','Mission-Driven'],  note:'Design for everyone; rapid growth with strong design-led product thinking' },
+        ]
+      },
+    ];
+
+    // ─── Company Explorer Logic ───────────────────────────────────────
+    let explorerDebounce = null;
+
+    function liveExplore(val) {
+      clearTimeout(explorerDebounce);
+      explorerDebounce = setTimeout(() => { if (val.length >= 2) exploreCompanies(); }, 300);
+    }
+
+    function quickExplore(chipEl, disciplineId) {
+      // Set active chip
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chipEl.classList.add('active');
+      // Set input text
+      const cat = COMPANY_DB.find(c => c.id === disciplineId);
+      if (cat) document.getElementById('discipline-input').value = cat.label;
+      exploreCompanies();
+    }
+
+    function exploreCompanies() {
+      const q = document.getElementById('discipline-input').value.toLowerCase().trim();
+      if (!q) return;
+
+      // Find matching categories (can match multiple)
+      const matched = COMPANY_DB.filter(cat =>
+        cat.keywords.some(kw => q.includes(kw) || kw.includes(q)) ||
+        cat.label.toLowerCase().includes(q) ||
+        cat.id.includes(q)
+      );
+
+      let companies = [];
+      if (matched.length > 0) {
+        // Gather unique companies from matched categories
+        const seen = new Set();
+        matched.forEach(cat => {
+          cat.companies.forEach(co => {
+            if (!seen.has(co.name)) { seen.add(co.name); companies.push(co); }
+          });
+        });
+      } else {
+        // No category match — try company name fuzzy search across all
+        const allCos = COMPANY_DB.flatMap(c => c.companies);
+        const seen = new Set();
+        companies = allCos.filter(co => {
+          const match = co.name.toLowerCase().includes(q) || co.industry.toLowerCase().includes(q) ||
+            co.note.toLowerCase().includes(q) || co.tags.some(t => t.toLowerCase().includes(q));
+          if (match && !seen.has(co.name)) { seen.add(co.name); return true; }
+          return false;
+        });
+      }
+
+      renderCompanyCards(companies, matched.length > 0 ? matched.map(m => m.label).join(', ') : q);
+    }
+
+    function renderCompanyCards(companies, discipline) {
+      const grid      = document.getElementById('company-grid');
+      const empty     = document.getElementById('company-grid-empty');
+      const status    = document.getElementById('explorer-status');
+      const statusTxt = document.getElementById('explorer-status-text');
+
+      if (companies.length === 0) {
+        grid.classList.add('hidden');
+        empty.classList.remove('hidden');
+        status.classList.add('hidden');
+        empty.innerHTML = `<div class="text-4xl mb-3">😔</div>
+          <p class="font-semibold text-gray-600 dark:text-gray-400">No companies found for "${escHtml(discipline)}"</p>
+          <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Try different keywords like "data", "finance", or "energy"</p>`;
+        return;
+      }
+
+      empty.classList.add('hidden');
+      status.classList.remove('hidden');
+      statusTxt.innerHTML = `Showing <strong>${companies.length}</strong> companies for <strong>${escHtml(discipline)}</strong> — click any company to see jobs`;
+      grid.classList.remove('hidden');
+      grid.innerHTML = companies.map(co => buildCompanyCard(co)).join('');
+    }
+
+    function buildCompanyCard(co) {
+      const remoteColor = {
+        'Fully Remote':    'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+        'Remote-Friendly': 'bg-blue-100  dark:bg-blue-900/30  text-blue-700  dark:text-blue-400',
+        'Hybrid':          'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
+        'On-site':         'bg-gray-100  dark:bg-gray-800       text-gray-600  dark:text-gray-400',
+      }[co.remote] || 'bg-gray-100 text-gray-600';
+
+      const sizeColor = {
+        'Startup':   'text-purple-600 dark:text-purple-400',
+        'Small':     'text-blue-600   dark:text-blue-400',
+        'Mid-size':  'text-teal-600   dark:text-teal-400',
+        'Large':     'text-orange-600 dark:text-orange-400',
+        'Enterprise':'text-red-600    dark:text-red-400',
+      }[co.size] || 'text-gray-500';
+
+      const tags = co.tags.slice(0,3).map(t =>
+        `<span class="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full">${escHtml(t)}</span>`
+      ).join('');
+
+      return `
+      <div class="card-hover bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 flex flex-col gap-3 shadow-sm">
+        <!-- Header -->
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <h3 class="font-bold text-gray-900 dark:text-white text-base leading-tight">${escHtml(co.name)}</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">${escHtml(co.industry)}</p>
+          </div>
+          <span class="text-xs font-semibold ${sizeColor} shrink-0 mt-0.5">${escHtml(co.size)}</span>
+        </div>
+
+        <!-- Remote badge -->
+        <div>
+          <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${remoteColor}">
+            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-70"></span>${escHtml(co.remote)}
+          </span>
+        </div>
+
+        <!-- Tags -->
+        <div class="flex flex-wrap gap-1">${tags}</div>
+
+        <!-- Note -->
+        <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">${escHtml(co.note)}</p>
+
+        <!-- Find Jobs button -->
+        <button onclick="selectCompany('${co.name.replace(/'/g, "\\'")}')"
+          class="btn-press mt-auto w-full bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm shadow-brand-500/20">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          Find Jobs at ${escHtml(co.name)}
+        </button>
+      </div>`;
+    }
+
+    function selectCompany(companyName) {
+      // Pre-fill company field
+      document.getElementById('job-company').value = companyName;
+
+      const role = document.getElementById('job-role').value.trim();
+      if (role) {
+        // Role already set — run search immediately
+        searchJobs();
+      } else {
+        // No role set yet — scroll to form and highlight role input
+        document.querySelector('.hero-bg').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(() => {
+          const roleEl = document.getElementById('job-role');
+          roleEl.focus();
+          roleEl.placeholder = 'Enter your job title to search at ' + companyName + '…';
+          roleEl.classList.add('ring-2','ring-brand-400','border-brand-300');
+          setTimeout(() => {
+            roleEl.classList.remove('ring-2','ring-brand-400','border-brand-300');
+            roleEl.placeholder = 'e.g. Data Engineer, VP Analytics';
+          }, 3000);
+        }, 600);
+        showToast(companyName + ' selected — add your job title to search!');
+      }
     }
 
     // ─── Init ─────────────────────────────────────────────────────────
