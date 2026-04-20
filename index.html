@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JobFinder — Search Smarter</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50:  '#f0f4ff',
+              100: '#e0e9ff',
+              500: '#4f6ef7',
+              600: '#3b5bf6',
+              700: '#2a4af0',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.4s ease-out',
+            'slide-up': 'slideUp 0.4s ease-out',
+          },
+          keyframes: {
+            fadeIn:  { from: { opacity: 0 }, to: { opacity: 1 } },
+            slideUp: { from: { opacity: 0, transform: 'translateY(20px)' }, to: { opacity: 1, transform: 'translateY(0)' } },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    * { font-family: 'Inter', sans-serif; }
+    .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .card-hover:hover { transform: translateY(-2px); }
+    .btn-press { transition: transform 0.1s ease; }
+    .btn-press:active { transform: scale(0.97); }
+    .gradient-text {
+      background: linear-gradient(135deg, #4f6ef7, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-bg {
+      background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(79,110,247,0.15) 0%, transparent 60%);
+    }
+    .dark .hero-bg {
+      background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(79,110,247,0.1) 0%, transparent 60%);
+    }
+    #results-section { scroll-margin-top: 80px; }
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      z-index: 9999;
+      transform: translateY(100px); opacity: 0;
+      transition: all 0.3s ease;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-300">
+
+  <!-- ──────────────────────────── NAV ──────────────────────────── -->
+  <nav class="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur border-b border-gray-200 dark:border-gray-800">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-2xl">🔍</span>
+        <span class="font-bold text-lg tracking-tight gradient-text">JobFinder</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="recent-toggle" class="text-sm text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-500 font-medium transition-colors hidden" onclick="toggleRecentPanel()">
+          Recent Searches
+        </button>
+        <button id="dark-toggle" onclick="toggleDark()" class="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors btn-press" title="Toggle dark mode">
+          <svg id="sun-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/>
+          </svg>
+          <svg id="moon-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ──────────────────────────── HERO ──────────────────────────── -->
+  <main class="hero-bg">
+    <div class="max-w-3xl mx-auto px-4 pt-16 pb-12 text-center">
+      <div class="inline-flex items-center gap-2 bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 text-sm font-medium px-4 py-1.5 rounded-full mb-6 border border-brand-100 dark:border-brand-500/20">
+        <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+        Search across 8 job boards instantly
+      </div>
+      <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4 leading-tight">
+        Find your next role<br class="hidden sm:block" />
+        <span class="gradient-text">across every platform</span>
+      </h1>
+      <p class="text-gray-500 dark:text-gray-400 text-lg mb-10">Enter your job title and location — we generate search links for all major job boards so you can apply faster.</p>
+
+      <!-- Search Form -->
+      <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-6 sm:p-8 text-left animate-fade-in">
+        <div class="grid sm:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Job Title / Role</label>
+            <input id="job-role" type="text" placeholder="e.g. Data Engineer, VP Analytics"
+              class="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder-gray-400 transition-all"
+              onkeydown="if(event.key==='Enter') searchJobs()" />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Location</label>
+            <input id="job-location" type="text" placeholder="e.g. Birmingham AL, Remote"
+              class="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder-gray-400 transition-all"
+              onkeydown="if(event.key==='Enter') searchJobs()" />
+          </div>
+        </div>
+        <div class="mb-5">
+          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            Company <span class="text-gray-400 font-normal">(optional)</span>
+          </label>
+          <input id="job-company" type="text" placeholder="e.g. Google, Microsoft, Tesla — leave blank to search all companies"
+            class="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder-gray-400 transition-all"
+            onkeydown="if(event.key==='Enter') searchJobs()" />
+        </div>
+        <button onclick="searchJobs()" class="w-full bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-3.5 rounded-xl transition-all btn-press shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2 text-sm">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          Search Jobs
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ──────────────────────────── RECENT SEARCHES ──────────────────────────── -->
+  <div id="recent-panel" class="hidden max-w-3xl mx-auto px-4 mb-6 animate-slide-up">
+    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-semibold text-sm text-gray-700 dark:text-gray-300">Recent Searches</h3>
+        <button onclick="clearRecent()" class="text-xs text-red-500 hover:text-red-700 font-medium">Clear all</button>
+      </div>
+      <div id="recent-list" class="flex flex-wrap gap-2"></div>
+    </div>
+  </div>
+
+  <!-- ──────────────────────────── RESULTS ──────────────────────────── -->
+  <section id="results-section" class="max-w-6xl mx-auto px-4 pb-16 hidden animate-slide-up">
+    <!-- Results header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+      <div>
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white">Job Search Links</h2>
+        <p id="results-subtitle" class="text-sm text-gray-500 dark:text-gray-400 mt-0.5"></p>
+      </div>
+      <button onclick="openAll()" class="inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-semibold text-sm px-5 py-2.5 rounded-xl hover:opacity-90 transition-all btn-press shadow-lg">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+        </svg>
+        Open All
+      </button>
+    </div>
+
+    <!-- Cards grid -->
+    <div id="cards-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+  </section>
+
+  <!-- ──────────────────────────── TOAST ──────────────────────────── -->
+  <div id="toast" class="toast">
+    <div class="bg-gray-900 dark:bg-gray-700 text-white text-sm px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 font-medium">
+      <svg class="w-4 h-4 text-green-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+      </svg>
+      <span id="toast-msg">Link copied!</span>
+    </div>
+  </div>
+
+  <!-- ──────────────────────────── FOOTER ──────────────────────────── -->
+  <footer class="border-t border-gray-200 dark:border-gray-800 py-6 mt-4">
+    <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-sm text-gray-400">
+      <span>🔍 <strong class="text-gray-600 dark:text-gray-300">JobFinder</strong> — no backend, no tracking, just links</span>
+      <span>Built with ❤ and Tailwind CSS</span>
+    </div>
+  </footer>
+
+  <!-- ──────────────────────────── SCRIPT ──────────────────────────── -->
+  <script>
+    // ─── Job Boards Config ────────────────────────────────────────────
+    const JOB_BOARDS = [
+      {
+        name: 'LinkedIn',
+        icon: '💼',
+        color: 'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800',
+        badge: 'bg-blue-600',
+        url: (role, loc, co) => {
+          const kw = co ? `${role} ${co}` : role;
+          return `https://www.linkedin.com/jobs/search/?keywords=${enc(kw)}&location=${enc(loc)}`;
+        },
+      },
+      {
+        name: 'Indeed',
+        icon: '🔵',
+        color: 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-100 dark:border-indigo-800',
+        badge: 'bg-indigo-600',
+        url: (role, loc, co) => {
+          const q = co ? `${role} ${co}` : role;
+          return `https://www.indeed.com/jobs?q=${enc(q)}&l=${enc(loc)}`;
+        },
+      },
+      {
+        name: 'Glassdoor',
+        icon: '🟢',
+        color: 'bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800',
+        badge: 'bg-green-600',
+        url: (role, loc, co) => {
+          const kw = co ? `${role} ${co}` : role;
+          return `https://www.glassdoor.com/Job/jobs.htm?sc.keyword=${enc(kw)}&locKeyword=${enc(loc)}`;
+        },
+      },
+      {
+        name: 'ZipRecruiter',
+        icon: '⚡',
+        color: 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-100 dark:border-yellow-800',
+        badge: 'bg-yellow-500',
+        url: (role, loc, co) => {
+          const q = co ? `${role} at ${co}` : role;
+          return `https://www.ziprecruiter.com/jobs-search?search=${enc(q)}&location=${enc(loc)}`;
+        },
+      },
+      {
+        name: 'Monster',
+        icon: '👾',
+        color: 'bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800',
+        badge: 'bg-purple-600',
+        url: (role, loc, co) => {
+          const q = co ? `${role} ${co}` : role;
+          return `https://www.monster.com/jobs/search?q=${enc(q)}&where=${enc(loc)}`;
+        },
+      },
+      {
+        name: 'SimplyHired',
+        icon: '🟠',
+        color: 'bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-800',
+        badge: 'bg-orange-500',
+        url: (role, loc, co) => {
+          const q = co ? `${role} ${co}` : role;
+          return `https://www.simplyhired.com/search?q=${enc(q)}&l=${enc(loc)}`;
+        },
+      },
+      {
+        name: 'CareerBuilder',
+        icon: '🏗',
+        color: 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800',
+        badge: 'bg-red-600',
+        url: (role, loc, co) => {
+          const kw = co ? `${role} ${co}` : role;
+          return `https://www.careerbuilder.com/jobs?keywords=${enc(kw)}&location=${enc(loc)}`;
+        },
+      },
+      {
+        name: 'Google Jobs',
+        icon: '🔍',
+        color: 'bg-teal-50 dark:bg-teal-900/20 border-teal-100 dark:border-teal-800',
+        badge: 'bg-teal-600',
+        url: (role, loc, co) => {
+          const q = co ? `${role} at ${co} jobs ${loc}` : `${role} jobs ${loc}`;
+          return `https://www.google.com/search?q=${enc(q)}&ibp=htl;jobs`;
+        },
+      },
+    ];
+
+    // ─── Helpers ──────────────────────────────────────────────────────
+    const enc = s => encodeURIComponent(s.trim());
+
+    function showToast(msg = 'Link copied!') {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    // ─── Dark Mode ───────────────────────────────────────────────────
+    function initDark() {
+      const saved = localStorage.getItem('jf_dark');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (saved === 'true' || (saved === null && prefersDark)) {
+        document.documentElement.classList.add('dark');
+        document.getElementById('sun-icon').classList.remove('hidden');
+        document.getElementById('moon-icon').classList.add('hidden');
+      }
+    }
+
+    function toggleDark() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('jf_dark', isDark);
+      document.getElementById('sun-icon').classList.toggle('hidden', !isDark);
+      document.getElementById('moon-icon').classList.toggle('hidden', isDark);
+    }
+
+    // ─── Recent Searches ─────────────────────────────────────────────
+    function getRecent() {
+      try { return JSON.parse(localStorage.getItem('jf_recent') || '[]'); } catch { return []; }
+    }
+
+    function saveRecent(role, location, company) {
+      let items = getRecent().filter(r => !(r.role === role && r.location === location && r.company === company));
+      items.unshift({ role, location, company: company || '', ts: Date.now() });
+      items = items.slice(0, 8);
+      localStorage.setItem('jf_recent', JSON.stringify(items));
+      renderRecent();
+    }
+
+    function renderRecent() {
+      const items = getRecent();
+      const btn = document.getElementById('recent-toggle');
+      const panel = document.getElementById('recent-panel');
+      const list = document.getElementById('recent-list');
+
+      if (items.length === 0) {
+        btn.classList.add('hidden');
+        panel.classList.add('hidden');
+        return;
+      }
+
+      btn.classList.remove('hidden');
+      list.innerHTML = items.map(r => {
+        const label = r.company
+          ? `${escHtml(r.role)} @ ${escHtml(r.company)} — ${escHtml(r.location)}`
+          : `${escHtml(r.role)} — ${escHtml(r.location)}`;
+        return `<button onclick="loadRecent('${escHtml(r.role)}','${escHtml(r.location)}','${escHtml(r.company || '')}')"
+          class="inline-flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-brand-50 dark:hover:bg-brand-900/30 text-gray-700 dark:text-gray-300 text-sm px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-brand-300 transition-all font-medium">
+          <span class="text-xs">🕒</span>${label}
+        </button>`;
+      }).join('');
+    }
+
+    function escHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+
+    function loadRecent(role, location, company) {
+      document.getElementById('job-role').value = role;
+      document.getElementById('job-location').value = location;
+      document.getElementById('job-company').value = company || '';
+      searchJobs();
+    }
+
+    function clearRecent() {
+      localStorage.removeItem('jf_recent');
+      renderRecent();
+      document.getElementById('recent-panel').classList.add('hidden');
+    }
+
+    function toggleRecentPanel() {
+      document.getElementById('recent-panel').classList.toggle('hidden');
+    }
+
+    // ─── Main Search ──────────────────────────────────────────────────
+    function searchJobs() {
+      const role     = document.getElementById('job-role').value.trim();
+      const location = document.getElementById('job-location').value.trim();
+      const company  = document.getElementById('job-company').value.trim();
+
+      if (!role) {
+        const el = document.getElementById('job-role');
+        el.focus();
+        el.classList.add('ring-2','ring-red-400','border-red-300');
+        setTimeout(() => el.classList.remove('ring-2','ring-red-400','border-red-300'), 1500);
+        return;
+      }
+
+      saveRecent(role, location || 'Any Location', company);
+
+      // Build cards
+      const grid = document.getElementById('cards-grid');
+      grid.innerHTML = JOB_BOARDS.map(board => buildCard(board, role, location, company)).join('');
+
+      // Update subtitle
+      const locLabel = location || 'Anywhere';
+      const coLabel  = company ? ` at <strong class="text-gray-700 dark:text-gray-200">${escHtml(company)}</strong>` : '';
+      document.getElementById('results-subtitle').innerHTML =
+        `${JOB_BOARDS.length} platforms for <strong class="text-gray-700 dark:text-gray-200">"${escHtml(role)}"</strong>${coLabel} in ${escHtml(locLabel)}`;
+
+      // Show results
+      const section = document.getElementById('results-section');
+      section.classList.remove('hidden');
+      setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    }
+
+    function buildCard(board, role, location, company) {
+      const url      = board.url(role, location, company);
+      const locLabel = location || 'Any Location';
+      const coLine   = company ? `\n*Company:* ${company}` : '';
+      const waMsg    = `I found a great job listing!\n\n*Role:* ${role}${coLine}\n*Location:* ${locLabel}\n*Platform:* ${board.name}\n\n${url}`;
+      const waUrl    = `https://api.whatsapp.com/send?text=${encodeURIComponent(waMsg)}`;
+      const emailSub = encodeURIComponent(`Job Opportunity: ${role}${company ? ' at ' + company : ''} in ${locLabel}`);
+      const emailBodyStr = company
+        ? `Hi,\n\nHere's a job search link for "${role}" at "${company}" in "${locLabel}" on ${board.name}:\n\n${url}\n\nHope this helps!`
+        : `Hi,\n\nHere's a job search link for "${role}" in "${locLabel}" on ${board.name}:\n\n${url}\n\nHope this helps!`;
+      const emailBody= encodeURIComponent(emailBodyStr);
+      const mailtoUrl= `mailto:?subject=${emailSub}&body=${emailBody}`;
+
+      return `
+      <div class="card-hover bg-white dark:bg-gray-900 rounded-2xl border ${board.color} p-5 flex flex-col gap-4 shadow-sm">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 ${board.badge} rounded-xl flex items-center justify-center text-xl shadow-sm">
+              ${board.icon}
+            </div>
+            <div>
+              <h3 class="font-bold text-gray-900 dark:text-white text-sm">${board.name}</h3>
+              <span class="text-xs text-gray-400 dark:text-gray-500">Job search</span>
+            </div>
+          </div>
+          <button onclick="copyLink('${url.replace(/'/g, "\\'")}')"
+            class="p-1.5 rounded-lg text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-900/30 transition-all"
+            title="Copy link">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Company badge if specified -->
+        ${company ? `<div class="flex items-center gap-1.5">
+          <span class="inline-flex items-center gap-1 bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 text-xs font-semibold px-2.5 py-1 rounded-full border border-brand-100 dark:border-brand-700">
+            🏢 ${escHtml(company)}
+          </span>
+        </div>` : ''}
+
+        <!-- Search URL preview -->
+        <div class="bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2 border border-gray-100 dark:border-gray-700">
+          <p class="text-xs text-gray-400 dark:text-gray-500 font-mono truncate leading-relaxed">${truncUrl(board.url(role, location, company))}</p>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="flex flex-col gap-2 mt-auto">
+          <a href="${url}" target="_blank" rel="noopener noreferrer"
+            class="btn-press inline-flex items-center justify-center gap-2 ${board.badge} hover:opacity-90 text-white text-sm font-semibold py-2.5 rounded-xl transition-all shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            Search ${board.name}
+          </a>
+
+          <div class="grid grid-cols-2 gap-2">
+            <a href="${waUrl}" target="_blank" rel="noopener noreferrer"
+              class="btn-press inline-flex items-center justify-center gap-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold py-2 rounded-xl transition-all">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+              </svg>
+              WhatsApp
+            </a>
+            <a href="${mailtoUrl}"
+              class="btn-press inline-flex items-center justify-center gap-1.5 bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 text-white text-xs font-semibold py-2 rounded-xl transition-all">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+              </svg>
+              Email
+            </a>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function truncUrl(url, max = 55) {
+      return url.length > max ? url.substring(0, max) + '…' : url;
+    }
+
+    function copyLink(url) {
+      navigator.clipboard.writeText(url).then(() => showToast('Link copied to clipboard!')).catch(() => {
+        const el = document.createElement('textarea');
+        el.value = url; document.body.appendChild(el);
+        el.select(); document.execCommand('copy');
+        document.body.removeChild(el);
+        showToast('Link copied!');
+      });
+    }
+
+    function openAll() {
+      const role    = document.getElementById('job-role').value.trim();
+      const loc     = document.getElementById('job-location').value.trim();
+      const company = document.getElementById('job-company').value.trim();
+      if (!role) return;
+      JOB_BOARDS.forEach((board, i) => {
+        setTimeout(() => window.open(board.url(role, loc, company), '_blank', 'noopener'), i * 200);
+      });
+      showToast('Opening all ' + JOB_BOARDS.length + ' platforms…');
+    }
+
+    // ─── Init ─────────────────────────────────────────────────────────
+    initDark();
+    renderRecent();
+
+    // Auto-focus role input
+    window.addEventListener('load', () => {
+      document.getElementById('job-role').focus();
+    });
+  </script>
+</body>
+</html>
