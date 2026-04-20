@@ -53,6 +53,8 @@
     #results-section, #explorer-section { scroll-margin-top: 80px; }
     .chip.active { background: #4f6ef7 !important; color: white !important; border-color: #4f6ef7 !important; }
     .dark .chip.active { background: #3b5bf6 !important; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin 0.8s linear infinite; display:inline-block; }
     .toast {
       position: fixed; bottom: 24px; right: 24px;
       z-index: 9999;
@@ -144,8 +146,9 @@
           🏢 <span>Company Explorer</span>
           <span class="text-xs font-medium bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 px-2 py-0.5 rounded-full">NEW</span>
         </h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Browse top companies by your discipline — click one to see available jobs across all boards</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Browse S&P 500 companies by your discipline — click one to see available jobs across all boards</p>
       </div>
+      <div id="sp500-status" class="text-xs text-gray-400 shrink-0"></div>
     </div>
 
     <!-- Discipline search row -->
@@ -174,9 +177,16 @@
       <button onclick="quickExplore(this,'product')" class="chip btn-press inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:border-brand-400 hover:text-brand-600 transition-all">📦 Product</button>
     </div>
 
-    <!-- Company count/status -->
-    <div id="explorer-status" class="text-sm text-gray-400 dark:text-gray-500 mb-4 hidden">
-      <span id="explorer-status-text"></span>
+    <!-- Company count/status + Google link -->
+    <div id="explorer-status" class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 hidden">
+      <span id="explorer-status-text" class="text-sm text-gray-500 dark:text-gray-400"></span>
+      <a id="google-jobs-link" href="#" target="_blank" rel="noopener noreferrer"
+        class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+        </svg>
+        Search Google Jobs for this discipline →
+      </a>
     </div>
 
     <!-- Company grid (empty state) -->
@@ -544,7 +554,362 @@
       showToast('Opening all ' + JOB_BOARDS.length + ' platforms…');
     }
 
-    // ─── Company Explorer Database ────────────────────────────────────
+    // ─── S&P 500 Live Data (Wikipedia) ───────────────────────────────
+    let SP500 = [];
+    let sp500State = 'idle'; // idle | loading | loaded | failed
+
+    // GICS Sector → discipline keywords
+    const SECTOR_DISCIPLINES = {
+      'Information Technology':  ['data','analytics','analyst','bi','engineer','engineering','software','tech','developer','cloud','product','ai','ml','machine learning','devops','infrastructure','cybersecurity','database','sql','python'],
+      'Financials':              ['finance','financial','banking','fintech','insurance','investment','accounting','audit','cpa','cfa','risk','treasury','quant','actuary','underwriting'],
+      'Health Care':             ['healthcare','health','medical','pharma','pharmaceutical','biotech','clinical','hospital','nursing','patient','ehr','life sciences'],
+      'Energy':                  ['energy','oil','gas','petroleum','upstream','downstream','refinery','pipeline','drilling','reservoir'],
+      'Utilities':               ['utilities','utility','electric','power','grid','water','gas distribution','natural gas','renewable'],
+      'Industrials':             ['engineering','manufacturing','consulting','aerospace','defense','logistics','supply chain','operations','project management','construction'],
+      'Consumer Discretionary':  ['retail','consumer','e-commerce','ecommerce','automotive','luxury','hospitality','restaurant','travel','fashion'],
+      'Consumer Staples':        ['consumer staples','food','beverage','grocery','household','personal care'],
+      'Communication Services':  ['media','telecom','telecommunications','marketing','social media','gaming','entertainment','publishing','broadcasting','advertising'],
+      'Materials':               ['materials','chemicals','mining','metals','paper','packaging','forestry'],
+      'Real Estate':             ['real estate','reit','property','construction','housing','commercial property'],
+    };
+
+    // Quick-chip discipline id → sector list
+    const CHIP_SECTORS = {
+      data:        ['Information Technology', 'Financials'],
+      engineering: ['Information Technology', 'Industrials'],
+      finance:     ['Financials'],
+      energy:      ['Energy', 'Utilities'],
+      healthcare:  ['Health Care'],
+      consulting:  ['Industrials', 'Information Technology'],
+      marketing:   ['Communication Services', 'Consumer Discretionary'],
+      ai:          ['Information Technology'],
+      product:     ['Information Technology', 'Consumer Discretionary'],
+    };
+
+    // Sub-industry spotlight keywords for AI/data within IT
+    const SUBINDUSTRY_BOOSTS = {
+      data:        ['data','analytics','information','software','internet','processing'],
+      ai:          ['semiconductor','software','internet services','data processing','cloud','ai'],
+      engineering: ['software','hardware','semiconductor','internet','systems'],
+      consulting:  ['consulting','services','professional'],
+    };
+
+    async function initSP500() {
+      const CACHE = 'jf_sp500_v3';
+      const TTL   = 12 * 3600 * 1000;
+
+      setStatusBadge('loading');
+
+      try {
+        const cached = JSON.parse(localStorage.getItem(CACHE) || 'null');
+        if (cached && Date.now() - cached.ts < TTL && cached.data.length > 400) {
+          SP500 = cached.data;
+          sp500State = 'loaded';
+          setStatusBadge('loaded');
+          return;
+        }
+      } catch {}
+
+      try {
+        const resp = await fetch(
+          'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies',
+          { headers: { 'Accept': 'text/html,application/xhtml+xml' } }
+        );
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const html  = await resp.text();
+        const list  = parseSP500Html(html);
+        if (list.length > 400) {
+          SP500 = list;
+          sp500State = 'loaded';
+          localStorage.setItem(CACHE, JSON.stringify({ ts: Date.now(), data: list }));
+          setStatusBadge('loaded');
+          return;
+        }
+      } catch (e) { console.warn('SP500 fetch:', e.message); }
+
+      // Fallback: use curated COMPANY_DB
+      sp500State = 'failed';
+      setStatusBadge('failed');
+    }
+
+    function parseSP500Html(html) {
+      const parser = new DOMParser();
+      const doc    = parser.parseFromString(html, 'text/html');
+      const table  = doc.querySelector('table.wikitable');
+      if (!table) return [];
+
+      const out  = [];
+      const seen = new Set();
+
+      table.querySelectorAll('tbody tr').forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length < 4) return;
+
+        const ticker      = cells[0].textContent.replace(/\[.*?\]/g, '').trim();
+        const name        = cells[1].textContent.replace(/\[.*?\]/g, '').trim();
+        const sector      = cells[2].textContent.trim();
+        const subIndustry = cells[3].textContent.trim();
+        const hq          = cells[4] ? cells[4].textContent.trim() : '';
+
+        if (ticker && name && sector && !seen.has(ticker)) {
+          seen.add(ticker);
+          out.push({ ticker, name, sector, subIndustry, hq });
+        }
+      });
+
+      return out;
+    }
+
+    function setStatusBadge(state) {
+      sp500State = state;
+      const el = document.getElementById('sp500-status');
+      if (!el) return;
+      if (state === 'loading') {
+        el.innerHTML = `<span class="inline-flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+          <span class="spin">⟳</span> Loading S&amp;P 500…
+        </span>`;
+      } else if (state === 'loaded') {
+        el.innerHTML = `<span class="inline-flex items-center gap-1 text-xs text-green-500">
+          ✓ ${SP500.length} companies · Wikipedia S&amp;P 500 · live
+        </span>`;
+      } else {
+        el.innerHTML = `<span class="inline-flex items-center gap-1 text-xs text-yellow-500">
+          ⚠ Offline — using curated list
+        </span>`;
+      }
+    }
+
+    // ─── Company Explorer Logic ───────────────────────────────────────
+    let explorerDebounce = null;
+    let lastDiscipline   = '';
+
+    function liveExplore(val) {
+      clearTimeout(explorerDebounce);
+      explorerDebounce = setTimeout(() => { if (val.length >= 2) exploreCompanies(); }, 300);
+    }
+
+    function quickExplore(chipEl, disciplineId) {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chipEl.classList.add('active');
+      const labels = { data:'Data & Analytics', engineering:'Engineering', finance:'Finance',
+        energy:'Energy', healthcare:'Healthcare', consulting:'Consulting',
+        marketing:'Marketing', ai:'AI / ML', product:'Product' };
+      const label = labels[disciplineId] || disciplineId;
+      document.getElementById('discipline-input').value = label;
+      lastDiscipline = label;
+      exploreByChip(disciplineId, label);
+    }
+
+    function exploreByChip(chipId, label) {
+      const sectors = CHIP_SECTORS[chipId] || [];
+      let companies;
+
+      if (sp500State === 'loaded' && SP500.length) {
+        const boostKws = SUBINDUSTRY_BOOSTS[chipId] || [];
+        const all = SP500.filter(c => sectors.includes(c.sector));
+        // Boost by sub-industry relevance
+        const boosted = all.filter(c => boostKws.length === 0 ||
+          boostKws.some(kw => c.subIndustry.toLowerCase().includes(kw)));
+        companies = boosted.length >= 10 ? boosted : all;
+      } else {
+        companies = filterFallback(chipId);
+      }
+
+      renderExplorerCards(companies, label);
+    }
+
+    function exploreCompanies() {
+      const q = document.getElementById('discipline-input').value.trim();
+      if (!q) return;
+      lastDiscipline = q;
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+
+      let companies;
+
+      if (sp500State === 'loaded' && SP500.length) {
+        companies = filterSP500(q);
+      } else {
+        companies = filterFallback(q);
+      }
+
+      renderExplorerCards(companies, q);
+    }
+
+    function filterSP500(query) {
+      const words = query.toLowerCase().split(/\s+/).filter(w => w.length >= 2);
+
+      // Map words → matching sectors
+      const matchedSectors = new Set();
+      words.forEach(word => {
+        Object.entries(SECTOR_DISCIPLINES).forEach(([sector, kws]) => {
+          if (kws.some(kw => kw.includes(word) || word.includes(kw))) {
+            matchedSectors.add(sector);
+          }
+        });
+      });
+
+      if (matchedSectors.size > 0) {
+        return SP500.filter(c => matchedSectors.has(c.sector));
+      }
+
+      // Broad text fallback
+      return SP500.filter(c => {
+        const text = `${c.name} ${c.ticker} ${c.sector} ${c.subIndustry} ${c.hq}`.toLowerCase();
+        return words.some(w => text.includes(w));
+      });
+    }
+
+    function filterFallback(query) {
+      const q = query.toLowerCase();
+      const matched = COMPANY_DB.filter(cat =>
+        cat.keywords.some(kw => q.includes(kw) || kw.includes(q)) ||
+        cat.label.toLowerCase().includes(q) || cat.id.includes(q)
+      );
+      if (matched.length === 0) return [];
+      const seen = new Set();
+      return matched.flatMap(c => c.companies).filter(co => {
+        if (seen.has(co.name)) return false;
+        seen.add(co.name); return true;
+      });
+    }
+
+    function renderExplorerCards(companies, discipline) {
+      const grid      = document.getElementById('company-grid');
+      const empty     = document.getElementById('company-grid-empty');
+      const statusBar = document.getElementById('explorer-status');
+      const statusTxt = document.getElementById('explorer-status-text');
+      const googleBtn = document.getElementById('google-jobs-link');
+
+      // Update Google Jobs link
+      const googleQ = discipline + ' jobs';
+      googleBtn.href = `https://www.google.com/search?q=${encodeURIComponent(googleQ)}&ibp=htl;jobs`;
+
+      if (!companies || companies.length === 0) {
+        grid.classList.add('hidden');
+        statusBar.classList.add('hidden');
+        empty.classList.remove('hidden');
+        empty.innerHTML = `<div class="text-4xl mb-3">😔</div>
+          <p class="font-semibold text-gray-600 dark:text-gray-400">No results for "<em>${escHtml(discipline)}</em>"</p>
+          <p class="text-sm text-gray-400 mt-1">Try: data, finance, energy, healthcare, engineering</p>`;
+        return;
+      }
+
+      empty.classList.add('hidden');
+      statusBar.classList.remove('hidden');
+      const src = sp500State === 'loaded' ? 'S&P 500 · Wikipedia' : 'Curated list';
+      statusTxt.innerHTML = `<strong>${companies.length}</strong> companies matched · ${src}`;
+
+      const isSP500 = sp500State === 'loaded' && companies[0] && companies[0].ticker !== undefined && !companies[0].tags;
+      grid.innerHTML = companies.map(co => isSP500 ? buildSP500Card(co) : buildCuratedCard(co)).join('');
+      grid.classList.remove('hidden');
+    }
+
+    // ─── Card: S&P 500 company ─────────────────────────────────────────
+    const SECTOR_COLORS = {
+      'Information Technology':  'border-blue-200   dark:border-blue-800   bg-blue-50   dark:bg-blue-950/40',
+      'Financials':              'border-green-200  dark:border-green-800  bg-green-50  dark:bg-green-950/40',
+      'Health Care':             'border-red-200    dark:border-red-800    bg-red-50    dark:bg-red-950/40',
+      'Energy':                  'border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950/40',
+      'Utilities':               'border-teal-200   dark:border-teal-800   bg-teal-50   dark:bg-teal-950/40',
+      'Industrials':             'border-slate-200  dark:border-slate-700  bg-slate-50  dark:bg-slate-950/40',
+      'Consumer Discretionary':  'border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/40',
+      'Consumer Staples':        'border-lime-200   dark:border-lime-800   bg-lime-50   dark:bg-lime-950/40',
+      'Communication Services':  'border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/40',
+      'Materials':               'border-stone-200  dark:border-stone-700  bg-stone-50  dark:bg-stone-950/40',
+      'Real Estate':             'border-amber-200  dark:border-amber-800  bg-amber-50  dark:bg-amber-950/40',
+    };
+
+    function buildSP500Card(co) {
+      const color  = SECTOR_COLORS[co.sector] || 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900';
+      const state  = co.hq ? (co.hq.split(',').slice(-1)[0].trim()) : '';
+      const safeN  = co.name.replace(/'/g, "\\'");
+
+      return `
+      <div class="card-hover rounded-2xl border ${color} p-4 flex flex-col gap-3 shadow-sm">
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-bold text-gray-900 dark:text-white text-sm leading-snug truncate">${escHtml(co.name)}</h3>
+            <span class="font-mono text-xs text-gray-400 dark:text-gray-500">${escHtml(co.ticker)}</span>
+          </div>
+          ${state ? `<span class="text-xs text-gray-400 shrink-0">${escHtml(state)}</span>` : ''}
+        </div>
+
+        <div class="flex flex-wrap gap-1">
+          <span class="text-xs font-semibold bg-white/70 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full border border-white/50 dark:border-gray-700">${escHtml(co.sector)}</span>
+          ${co.subIndustry ? `<span class="text-xs text-gray-500 dark:text-gray-400 bg-white/50 dark:bg-gray-900 px-2 py-0.5 rounded-full border border-gray-100 dark:border-gray-800 truncate max-w-full">${escHtml(co.subIndustry)}</span>` : ''}
+        </div>
+
+        <button onclick="selectCompany('${safeN}')"
+          class="btn-press mt-auto w-full bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm shadow-brand-500/20">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          Find Jobs at ${escHtml(co.name)}
+        </button>
+      </div>`;
+    }
+
+    // ─── Card: curated fallback company ────────────────────────────────
+    function buildCuratedCard(co) {
+      const safeN = co.name.replace(/'/g, "\\'");
+      const remoteColor = {
+        'Fully Remote':    'bg-green-100  dark:bg-green-900/30 text-green-700  dark:text-green-400',
+        'Remote-Friendly': 'bg-blue-100   dark:bg-blue-900/30  text-blue-700   dark:text-blue-400',
+        'Hybrid':          'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
+        'On-site':         'bg-gray-100   dark:bg-gray-800      text-gray-600   dark:text-gray-400',
+      }[co.remote] || 'bg-gray-100 text-gray-600';
+
+      const tags = (co.tags || []).slice(0, 3).map(t =>
+        `<span class="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full">${escHtml(t)}</span>`
+      ).join('');
+
+      return `
+      <div class="card-hover bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 flex flex-col gap-3 shadow-sm">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <h3 class="font-bold text-gray-900 dark:text-white text-sm">${escHtml(co.name)}</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400">${escHtml(co.industry || '')}</p>
+          </div>
+          <span class="text-xs font-semibold ${
+            {'Enterprise':'text-red-500','Large':'text-orange-500','Mid-size':'text-teal-500','Small':'text-blue-500','Startup':'text-purple-500'}[co.size] || 'text-gray-500'
+          }">${escHtml(co.size || '')}</span>
+        </div>
+        ${co.remote ? `<span class="w-fit text-xs font-semibold px-2.5 py-1 rounded-full ${remoteColor}">${escHtml(co.remote)}</span>` : ''}
+        <div class="flex flex-wrap gap-1">${tags}</div>
+        <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">${escHtml(co.note || '')}</p>
+        <button onclick="selectCompany('${safeN}')"
+          class="btn-press mt-auto w-full bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm shadow-brand-500/20">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          Find Jobs at ${escHtml(co.name)}
+        </button>
+      </div>`;
+    }
+
+    function selectCompany(companyName) {
+      document.getElementById('job-company').value = companyName;
+      const role = document.getElementById('job-role').value.trim();
+      if (role) {
+        searchJobs();
+      } else {
+        document.querySelector('.hero-bg').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(() => {
+          const el = document.getElementById('job-role');
+          el.focus();
+          el.placeholder = 'Enter your job title to search at ' + companyName + '…';
+          el.classList.add('ring-2','ring-brand-400','border-brand-300');
+          setTimeout(() => {
+            el.classList.remove('ring-2','ring-brand-400','border-brand-300');
+            el.placeholder = 'e.g. Data Engineer, VP Analytics';
+          }, 3000);
+        }, 600);
+        showToast(companyName + ' selected — add a job title above!');
+      }
+    }
+
+    // ─── Curated Fallback Database (offline) ─────────────────────────
+    const COMPANY_DB = [
     const COMPANY_DB = [
       {
         id: 'data',
@@ -869,8 +1234,8 @@
     // ─── Init ─────────────────────────────────────────────────────────
     initDark();
     renderRecent();
+    initSP500(); // start fetching S&P 500 in background
 
-    // Auto-focus role input
     window.addEventListener('load', () => {
       document.getElementById('job-role').focus();
     });
